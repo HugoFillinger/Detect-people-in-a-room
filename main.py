@@ -47,6 +47,76 @@ def get_number_of_people_in_a_room():
         error_message = f'Error: {str(e)}'
         return jsonify({'message': error_message, 'status': 'error'}), 400
 
+@app.route('/api/relaxWork', methods=['POST'])
+def getNumberOfPeopleInARoom():
+    # 40 NMS, 10 CONF
+    try:
+        personCount = 0
+        conf_threshold = 0.1
+        nms_threshold = 0.4
+
+        # Modèle YOLO pré-entrainé
+        nameWeight = "yolov4.weights"
+        nameCfg = "yolov4.cfg"
+        net = cv2.dnn.readNet(nameWeight, nameCfg)
+        layer_names = net.getUnconnectedOutLayersNames()
+
+        # Charger l'image
+        base64_string = request.json['base64_string']
+        image_data = base64.b64decode(base64_string)
+        image_array = np.frombuffer(image_data, dtype=np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
+        height, width = image.shape[:2]
+
+        # Normaliser l'image
+        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+        net.setInput(blob)
+
+        # Obtenir les prédictions
+        outs = net.forward(layer_names)
+
+        # Post-traitement des prédictions
+        boxes = []
+        confidences = []
+        class_ids = []
+
+        # Boites et leurs noms
+        for out in outs:
+            for detection in out:
+                scores = detection[5:]
+                class_id = np.argmax(scores)
+                confidence = scores[class_id]
+                if confidence > conf_threshold and class_id == 0:
+                    center_x = int(detection[0] * width)
+                    center_y = int(detection[1] * height)
+                    w = int(detection[2] * width)
+                    h = int(detection[3] * height)
+                    x = int(center_x - w / 2)
+                    y = int(center_y - h / 2)
+                    boxes.append([x, y, w, h])
+                    confidences.append(float(confidence))
+                    class_ids.append(class_id)
+
+        # Supprimer les boîtes non maximales
+        indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
+
+        # Dessiner les boîtes sur l'image / Compter les personnes
+        for j in range(len(indices)):
+            index = int(indices[j])
+            if confidences[index] > 0:
+                personCount += 1
+                # box = boxes[index]
+                # x, y, w, h = box
+                # label = f"Personne: {confidences[index]:.2f}"
+                # cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                # cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        return jsonify({'status': 'success', 'personCount': personCount}), 200
+
+    except Exception as e:
+        # Gestion des erreurs et réponse avec le code d'erreur
+        error_message = f'Error: {str(e)}'
+        return jsonify({'message': error_message, 'status': 'error'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)
