@@ -20,7 +20,8 @@ def get_number_of_people_in_a_room():
         number_of_people = 0
 
         # Récupération et décodage de l'image encodée en base64
-        base64_string = request.json['base64_string']
+        base64_string = request.json['image']
+        roomId = request.json['roomid']
         image_data = base64.b64decode(base64_string)
         image_array = np.frombuffer(image_data, dtype=np.uint8)
         image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
@@ -37,7 +38,7 @@ def get_number_of_people_in_a_room():
                 number_of_people += 1
 
         # Envoi du nombre de personnes au serveur MQTT
-        mqtt.send_to_mqtt_server("room-data/chillCode/PeopleInRoom", number_of_people)
+        mqtt.send_to_mqtt_server("room-data/" + roomId + "/chillCode/PeopleInRoom", number_of_people)
 
         # Réponse en cas de succès
         return jsonify({'status': 'success', 'numberOfPeople': number_of_people}), 200
@@ -62,7 +63,8 @@ def getNumberOfPeopleInARoom():
         layer_names = net.getUnconnectedOutLayersNames()
 
         # Charger l'image
-        base64_string = request.json['base64_string']
+        base64_string = request.json['image']
+        roomId = request.json['roomid']
         image_data = base64.b64decode(base64_string)
         image_array = np.frombuffer(image_data, dtype=np.uint8)
         image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
@@ -111,6 +113,7 @@ def getNumberOfPeopleInARoom():
                 # cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 # cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+        mqtt.send_to_mqtt_server("room-data/" + roomId + "/relax-work/PeopleInRoom", personCount)
         return jsonify({'status': 'success', 'personCount': personCount}), 200
 
     except Exception as e:
