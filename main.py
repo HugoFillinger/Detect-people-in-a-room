@@ -1,49 +1,51 @@
+import random
+import ssl
+
 import cv2
 import numpy as np
 from flask import Flask, jsonify, request
 import base64
+
+import mqtt
 from yolo_segmentation import YOLOSegmentation
-# Importation de la classe YOLOSegmentation depuis yolo_segmentation.py
 
 app = Flask(__name__)
 
 
 # Définition d'une route pour l'API
-@app.route('/api', methods=['POST'])
-def get_data():
+@app.route('/api/chillCode', methods=['POST'])
+def get_number_of_people_in_a_room():
     try:
-        nmbOfPoeple = 0
+        # Initialisation du compteur de personnes
+        number_of_people = 0
+
+        # Récupération et décodage de l'image encodée en base64
         base64_string = request.json['base64_string']
-        imgdata = base64.b64decode(base64_string)
-        img_array = np.frombuffer(imgdata, dtype=np.uint8)
-        img = cv2.imdecode(img_array, cv2.IMREAD_UNCHANGED)
+        image_data = base64.b64decode(base64_string)
+        image_array = np.frombuffer(image_data, dtype=np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
 
+        # Initialisation du détecteur YOLO
+        yolo_segmentation = YOLOSegmentation("yolov8m-seg.pt")
 
-        # Initialiser le détecteur de segmentation YOLO avec le modèle "yolov8m-seg.pt"
-        ys = YOLOSegmentation("yolov8m-seg.pt")
+        # Détection d'objets dans l'image
+        bounding_boxes, classes, segmentations, scores = yolo_segmentation.detect(image)
 
-        # Effectuer la détection d'objets et obtenir les boîtes englobantes, les classes, les segments de segmentation et les scores
-        bboxes, classes, segmentations, scores = ys.detect(img)
+        # Comptage du nombre de personnes détectées
+        for _, class_id, _, _ in zip(bounding_boxes, classes, segmentations, scores):
+            if class_id == 0:  # Assumer que l'ID 0 correspond à la classe 'personne'
+                number_of_people += 1
 
-        # Parcourir les résultats de la détection pour chaque objet détecté
-        for bbox, class_id, seg, score in zip(bboxes, classes, segmentations, scores):
-            # Déballer les coordonnées de la boîte englobante
-            (x, y, x2, y2) = bbox
+        # Envoi du nombre de personnes au serveur MQTT
+        mqtt.send_to_mqtt_server("room-data/chillCode/PeopleInRoom", number_of_people)
 
-            # Vérifier si la classe détectée correspond à la classe d'indice 0 (remplacer par le bon ID de classe si nécessaire)
-            if class_id == 0:
-               nmbOfPoeple = nmbOfPoeple + 1
-
-        return jsonify(nmbOfPoeple)
+        # Réponse en cas de succès
+        return jsonify({'status': 'success', 'numberOfPeople': number_of_people}), 200
 
     except Exception as e:
-        # En cas d'erreur lors du décodage ou du traitement
-        error_message = f'Erreur : {str(e)}'
-        error_data = {
-            'message': error_message,
-            'status': 'error'
-        }
-        return jsonify(error_data), 400  # Réponse avec un code d'erreur 400 Bad Request
+        # Gestion des erreurs et réponse avec le code d'erreur
+        error_message = f'Error: {str(e)}'
+        return jsonify({'message': error_message, 'status': 'error'}), 400
 
 
 if __name__ == '__main__':
