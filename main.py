@@ -47,6 +47,7 @@ def get_relax_work():
     # Récupération et décodage de l'image encodée en base64
     base64_string = request.json['image']
     roomId = request.json['roomid']
+
     try:
         return getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
     except Exception as e:
