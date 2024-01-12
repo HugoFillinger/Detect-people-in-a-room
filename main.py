@@ -34,8 +34,7 @@ def get_chill_code():
     base64_string = request.json['image']
     roomId = request.json['roomid']
     try:
-        get_number_of_people_in_a_room_chillcode(base64_string, roomId)
-        return jsonify({'status': 'success'}), 200
+        return get_number_of_people_in_a_room_chillcode(base64_string, roomId)
     except Exception as e:
         # Gestion des erreurs et réponse avec le code d'erreur
         error_message = f'Error: {str(e)}'
@@ -49,7 +48,8 @@ def get_relax_work():
     roomId = request.json['roomid']
 
     try:
-        return getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
+        response = getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
+        return response
     except Exception as e:
         # Gestion des erreurs et réponse avec le code d'erreur
         error_message = f'Error: {str(e)}'
