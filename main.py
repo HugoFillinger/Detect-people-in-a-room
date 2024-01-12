@@ -57,9 +57,9 @@ def getNumberOfPeopleInARoom():
         nms_threshold = 0.4
 
         # Modèle YOLO pré-entrainé
-        nameWeight = "yolov4.weights"
-        nameCfg = "yolov4.cfg"
-        net = cv2.dnn.readNet(nameWeight, nameCfg)
+        nameWeight = "/opt/peopleDetectionAPI/Detect-people-in-a-room/yolov4.weights"
+        nameCfg = "/opt/peopleDetectionAPI/Detect-people-in-a-room/yolov4.cfg"
+        net = cv2.dnn.readNetFromDarknet(nameWeight, nameCfg)
         layer_names = net.getUnconnectedOutLayersNames()
 
         # Charger l'image
