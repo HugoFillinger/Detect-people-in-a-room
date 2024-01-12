@@ -48,8 +48,7 @@ def get_relax_work():
     base64_string = request.json['image']
     roomId = request.json['roomid']
     try:
-        getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
-        return jsonify({'status': 'success'}), 200
+        return getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
     except Exception as e:
         # Gestion des erreurs et réponse avec le code d'erreur
         error_message = f'Error: {str(e)}'
