@@ -98,7 +98,7 @@ def getNumberOfPeopleInARoomRelaxWork(base64_string, roomId):
         # Modèle YOLO pré-entrainé
         nameWeight = "/opt/peopleDetectionAPI/Detect-people-in-a-room/yolov4.weights"
         nameCfg = "/opt/peopleDetectionAPI/Detect-people-in-a-room/yolov4.cfg"
-        net = cv2.dnn.readNetFromDarknet(nameWeight, nameCfg)
+        net = cv2.dnn.readNet(nameWeight, nameCfg)
         layer_names = net.getUnconnectedOutLayersNames()
 
         image_data = base64.b64decode(base64_string)
