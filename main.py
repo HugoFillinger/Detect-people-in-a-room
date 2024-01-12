@@ -12,22 +12,61 @@ from yolo_segmentation import YOLOSegmentation
 app = Flask(__name__)
 
 
-# Définition d'une route pour l'API
+@app.route('/api/detectPeople', methods=['POST'])
+def get_raspberry():
+    # Récupération et décodage de l'image encodée en base64
+    base64_string = request.json['image']
+    roomId = request.json['roomid']
+    # check if the two functions are working
+    try:
+        get_number_of_people_in_a_room_chillcode(base64_string, roomId)
+        getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        # Gestion des erreurs et réponse avec le code d'erreur
+        error_message = f'Error: {str(e)}'
+        return jsonify({'message': error_message, 'status': 'error'}), 400
+
+
 @app.route('/api/chillCode', methods=['POST'])
-def get_number_of_people_in_a_room():
+def get_chill_code():
+    # Récupération et décodage de l'image encodée en base64
+    base64_string = request.json['image']
+    roomId = request.json['roomid']
+    try:
+        get_number_of_people_in_a_room_chillcode(base64_string, roomId)
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        # Gestion des erreurs et réponse avec le code d'erreur
+        error_message = f'Error: {str(e)}'
+        return jsonify({'message': error_message, 'status': 'error'}), 400
+
+
+@app.route('/api/relaxWork', methods=['POST'])
+def get_relax_work():
+    # Récupération et décodage de l'image encodée en base64
+    base64_string = request.json['image']
+    roomId = request.json['roomid']
+    try:
+        getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
+        return jsonify({'status': 'success'}), 200
+    except Exception as e:
+        # Gestion des erreurs et réponse avec le code d'erreur
+        error_message = f'Error: {str(e)}'
+        return jsonify({'message': error_message, 'status': 'error'}), 400
+
+
+def get_number_of_people_in_a_room_chillcode(base64_string, roomId):
     try:
         # Initialisation du compteur de personnes
         number_of_people = 0
 
-        # Récupération et décodage de l'image encodée en base64
-        base64_string = request.json['image']
-        roomId = request.json['roomid']
         image_data = base64.b64decode(base64_string)
         image_array = np.frombuffer(image_data, dtype=np.uint8)
         image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
 
         # Initialisation du détecteur YOLO
-        yolo_segmentation = YOLOSegmentation("yolov8m-seg.pt")
+        yolo_segmentation = YOLOSegmentation("/opt/peopleDetectionAPI/Detect-people-in-a-room/yolov8m-seg.pt")
 
         # Détection d'objets dans l'image
         bounding_boxes, classes, segmentations, scores = yolo_segmentation.detect(image)
@@ -48,8 +87,8 @@ def get_number_of_people_in_a_room():
         error_message = f'Error: {str(e)}'
         return jsonify({'message': error_message, 'status': 'error'}), 400
 
-@app.route('/api/relaxWork', methods=['POST'])
-def getNumberOfPeopleInARoom():
+
+def getNumberOfPeopleInARoomRelaxWork(base64_string, roomId):
     # 40 NMS, 10 CONF
     try:
         personCount = 0
@@ -62,9 +101,6 @@ def getNumberOfPeopleInARoom():
         net = cv2.dnn.readNetFromDarknet(nameWeight, nameCfg)
         layer_names = net.getUnconnectedOutLayersNames()
 
-        # Charger l'image
-        base64_string = request.json['image']
-        roomId = request.json['roomid']
         image_data = base64.b64decode(base64_string)
         image_array = np.frombuffer(image_data, dtype=np.uint8)
         image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
@@ -120,6 +156,7 @@ def getNumberOfPeopleInARoom():
         # Gestion des erreurs et réponse avec le code d'erreur
         error_message = f'Error: {str(e)}'
         return jsonify({'message': error_message, 'status': 'error'}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)
