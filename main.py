@@ -149,7 +149,7 @@ def getNumberOfPeopleInARoomRelaxWork(base64_string, roomId):
                 # cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 # cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        mqtt.send_to_mqtt_server("room-data/" + roomId + "/PeopleInRoom", personCount)
+        mqtt.send_to_mqtt_server("room-data/" + roomId + "/relax-work/PeopleInRoom", personCount)
         return jsonify({'status': 'success', 'personCount': personCount}), 200
 
     except Exception as e:
