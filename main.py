@@ -1,11 +1,8 @@
-import random
-import ssl
-
 import cv2
 import numpy as np
 from flask import Flask, jsonify, request
 import base64
-
+import scikit_learn
 import mqtt
 from yolo_segmentation import YOLOSegmentation
 
@@ -50,6 +47,21 @@ def get_relax_work():
     try:
         response = getNumberOfPeopleInARoomRelaxWork(base64_string, roomId)
         return response
+    except Exception as e:
+        # Gestion des erreurs et réponse avec le code d'erreur
+        error_message = f'Error: {str(e)}'
+        return jsonify({'message': error_message, 'status': 'error'}), 400
+
+
+@app.route('/api/getTemperature', methods=['POST'])
+def get_temperature():
+    # Récupération et décodage de l'image encodée en base64
+    date = request.json['date']
+    meteo = request.json['meteo']
+
+    try:
+        predictedTemperature = scikit_learn.predict_temperature(date, meteo)
+        return jsonify({'status': 'success', 'temperature': predictedTemperature}), 200
     except Exception as e:
         # Gestion des erreurs et réponse avec le code d'erreur
         error_message = f'Error: {str(e)}'
@@ -160,4 +172,3 @@ def getNumberOfPeopleInARoomRelaxWork(base64_string, roomId):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
